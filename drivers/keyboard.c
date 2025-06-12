@@ -2,6 +2,7 @@
 #include "cpu/isr.h"
 #include "cpu/memlayout.h"
 #include "console.h"
+#include "vga.h"
 #include "port.h"
 #include "kernel/mem.h"
 
@@ -39,13 +40,23 @@ static void interrupt_handler(registers_t *r) {
      * simply update our state and do not output anything.
      */
     enum {
-        LSHIFT_PRESS  = 0x2a,
-        LSHIFT_RELEASE = 0xaa,
-        RSHIFT_PRESS  = 0x36,
-        RSHIFT_RELEASE = 0xb6,
+        BACKSPACE       = 0x0e,
+        BACKSPACE_REL   = 0x8e,
+        LSHIFT_PRESS    = 0x2a,
+        LSHIFT_RELEASE  = 0xaa,
+        RSHIFT_PRESS    = 0x36,
+        RSHIFT_RELEASE  = 0xb6,
     };
 
-    if (scancode == LSHIFT_PRESS) {
+    if (scancode == BACKSPACE) {
+        if (kbd_buf_size > 0) {
+            kbd_buf_size--;
+            vga_backspace();
+        }
+        return;
+    } else if (scancode == BACKSPACE_REL) {
+        return;
+    } else if (scancode == LSHIFT_PRESS) {
         lshift = 1;
         return;
     } else if (scancode == RSHIFT_PRESS) {
