@@ -4,28 +4,26 @@
 
 static char* const video_memory = (char*) (KERNBASE + 0xb8000);
 
-enum colors16 {
-    black = 0,
-    blue,
-    green,
-    cyan,
-    red,
-    magenta,
-    brown,
-    light_gray,
-    dark_gray,
-    light_blue,
-    light_green,
-    light_cyan,
-    light_red,
-    light_magenta,
-    yellow,
-    white,
+enum vga_color {
+    VGA_BLACK = 0,
+    VGA_BLUE,
+    VGA_GREEN,
+    VGA_CYAN,
+    VGA_RED,
+    VGA_MAGENTA,
+    VGA_BROWN,
+    VGA_LIGHT_GRAY,
+    VGA_DARK_GRAY,
+    VGA_LIGHT_BLUE,
+    VGA_LIGHT_GREEN,
+    VGA_LIGHT_CYAN,
+    VGA_LIGHT_RED,
+    VGA_LIGHT_MAGENTA,
+    VGA_YELLOW,
+    VGA_WHITE,
 };
 
-static unsigned char get_color(unsigned char fg, unsigned char bg) {
-    return (bg << 4) + fg;
-}
+static const unsigned char default_color = (VGA_BLACK << 4) | VGA_LIGHT_GRAY;
 
 enum {
     ROWS = 25,
@@ -60,9 +58,9 @@ unsigned vga_get_cursor() {
     return offset;
 }
 
-void vga_set_char(unsigned offset, char c) {
+void vga_set_char(unsigned offset, char c, unsigned char color) {
     video_memory[2 * offset] = c;
-    video_memory[2 * offset + 1] = get_color(light_gray, black);
+    video_memory[2 * offset + 1] = color;
 }
 
 void vga_backspace() {
@@ -72,12 +70,12 @@ void vga_backspace() {
     }
     offset--;
     vga_set_cursor(offset);
-    vga_set_char(offset, ' ');
+    vga_set_char(offset, ' ', default_color);
 }
 
 void vga_clear_screen() {
     for (unsigned i = 0; i < ROWS * COLS; ++i) {
-        vga_set_char(i, ' ');
+        vga_set_char(i, ' ', default_color);
     }
     vga_set_cursor(0);
 }
@@ -85,7 +83,7 @@ void vga_clear_screen() {
 static unsigned scroll() {
     kmemmove(video_memory, video_memory + 2 * COLS, 2 * COLS * (ROWS-1));
     for (int col = 0; col < COLS; col++) {
-        vga_set_char(get_offset(col, ROWS - 1), ' ');
+        vga_set_char(get_offset(col, ROWS - 1), ' ', default_color);
     }
     return get_offset(0, ROWS - 1);
 }
@@ -96,7 +94,7 @@ void vga_print_string(const char* s) {
         if (*s == '\n') {
             offset = get_offset(0, get_row_from_offset(offset) + 1);
         } else {
-            vga_set_char(offset, *s);
+            vga_set_char(offset, *s, default_color);
             offset++;
         }
         s++;

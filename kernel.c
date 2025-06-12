@@ -13,6 +13,14 @@
 #include "proc.h"
 #include "kernel/mem.h"
 
+static void spinner_tick(void) {
+    static int tick;
+    static const unsigned char seq[] = {0x18, '/', 0x1a, '\\', 0x19, '/', 0x1b, '\\'};
+    unsigned frame = (tick / 12) % 8;
+    vga_set_char(79, seq[frame], vga_entry_color(VGA_WHITE, VGA_BLACK));
+    tick = (tick + 1) % (12 * 8);
+}
+
 void vga_set_pixel(int x, int y, int color) {
     unsigned char* pixel = (unsigned char*) (KERNBASE + 0xA0000 + 320 * y + x);
     *pixel = color;
@@ -38,6 +46,7 @@ void kmain() {
     load_gdt();
     init_keyboard();
     init_pit();
+    add_timer_callback(spinner_tick);
     uartinit();
     load_idt();
     sti();
