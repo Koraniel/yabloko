@@ -97,3 +97,31 @@ _Noreturn void killproc() {
     swtch(&task_stack, vm.kernel_thread);
     __builtin_unreachable();
 }
+
+// Return how many bytes starting from ptr are mapped as user readable.
+// Returns 0 if ptr is outside of user space or unmapped.
+uintptr_t user_readable_after(uintptr_t ptr) {
+    if (ptr >= KERNBASE || !vm.user_task)
+        return 0;
+
+    pde_t *pgdir = vm.user_task->pgdir;
+    uintptr_t va = ptr;
+    uintptr_t end = ptr;
+
+    while (va < KERNBASE) {
+        pde_t pde = pgdir[PDX(va)];
+        if (!(pde & PTE_P))
+            break;
+
+        pte_t *pt = (pte_t*)P2V(PTE_ADDR(pde));
+        pte_t pte = pt[PTX(va)];
+        if (!(pte & PTE_P) || !(pte & PTE_U))
+            break;
+
+        uintptr_t page_end = PGROUNDDOWN(va) + PGSIZE;
+        end = page_end;
+        va = page_end;
+    }
+
+    return end > ptr ? end - ptr : 0;
+}

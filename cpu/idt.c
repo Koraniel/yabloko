@@ -121,8 +121,15 @@ static void* get_userspace_ptr(uint32_t ptr) {
     if (ptr > KERNBASE) {
         return 0;
     }
-    // FIXME: check if ptr is mapped and a valid 0-terminated string
-    return (void*)(ptr);
+    uintptr_t readable = user_readable_after(ptr);
+    if (!readable)
+        return 0;
+
+    for (uintptr_t i = 0; i < readable; i++) {
+        if (((const char*)ptr)[i] == '\0')
+            return (void*)ptr;
+    }
+    return 0;
 }
 
 static int handle_puts(const char* s) {
