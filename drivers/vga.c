@@ -65,6 +65,16 @@ void vga_set_char(unsigned offset, char c) {
     video_memory[2 * offset + 1] = get_color(light_gray, black);
 }
 
+void vga_backspace() {
+    unsigned offset = vga_get_cursor();
+    if (offset == 0) {
+        return;
+    }
+    offset--;
+    vga_set_cursor(offset);
+    vga_set_char(offset, ' ');
+}
+
 void vga_clear_screen() {
     for (unsigned i = 0; i < ROWS * COLS; ++i) {
         vga_set_char(i, ' ');
