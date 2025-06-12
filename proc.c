@@ -46,7 +46,8 @@ void run_elf(const char* name) {
         vm.user_task = kalloc();
     }
     vm.user_task->pgdir = setupkvm();
-    allocuvm(vm.user_task->pgdir, USER_BASE, USER_BASE + statbuf.size);
+    uintptr_t file_top = USER_BASE + statbuf.size;
+    allocuvm(vm.user_task->pgdir, USER_BASE, file_top);
     allocuvm(vm.user_task->pgdir, USER_STACK_BASE - 2 * PGSIZE, USER_STACK_BASE);
     switchuvm(&vm.user_task->tss, vm.user_task->stack.bottom, vm.user_task->pgdir);
 
@@ -56,6 +57,16 @@ void run_elf(const char* name) {
         return;
     }
     Elf32_Ehdr *hdr = (void*)USER_BASE;
+
+    uintptr_t prog_top = file_top;
+    for (int i = 0; i < hdr->e_phnum; i++) {
+        Elf32_Phdr *phdr = (void*)((char*)hdr + hdr->e_phoff + i * hdr->e_phentsize);
+        uintptr_t end = phdr->p_vaddr + phdr->p_memsz;
+        if (end > prog_top)
+            prog_top = end;
+    }
+    if (prog_top > file_top)
+        allocuvm(vm.user_task->pgdir, file_top, prog_top);
 
     struct kstack *u = &vm.user_task->stack;
     memset(u, 0, sizeof(*u));
