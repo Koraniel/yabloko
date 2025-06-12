@@ -1,0 +1,14 @@
+editable:
+  - "drivers/*.c"
+  - "drivers/*.h"
+  - "cpu/*.c"
+  - "cpu/*.h"
+  - "kernel.c"
+  - "proc.h"
+  - "proc.c"
+  - "console.h"
+  - "console.c"
+  - ".gitignore"
+name: "yabloko"
+score_file: "res.txt"
+test: make test-nox
